@@ -141,7 +141,7 @@ pub fn sol_interface(input: TokenStream) -> TokenStream {
                 pub fn #rust_name(&self, context: #context #(, #rust_args)*) ->
                     Result<<#return_type as #sol_type>::RustType, stylus_sdk::call::Error>
                 {
-                    use alloc::vec;
+                    use ::alloc::vec;
                     let args = <(#(#sol_args,)*) as #sol_type>::encode(&(#(#rust_arg_names,)*));
                     let mut calldata = vec![#selector0, #selector1, #selector2, #selector3];
                     calldata.extend(args);
@@ -164,7 +164,7 @@ pub fn sol_interface(input: TokenStream) -> TokenStream {
                 #method_impls
             }
 
-            impl core::ops::Deref for #name {
+            impl ::core::ops::Deref for #name {
                 type Target = #alloy_address;
 
                 fn deref(&self) -> &Self::Target {
@@ -179,7 +179,7 @@ pub fn sol_interface(input: TokenStream) -> TokenStream {
 
                 type TokenType<'a> = <#sol_address as #sol_type>::TokenType<'a>;
 
-                fn sol_type_name() -> alloc::borrow::Cow<'static, str> {
+                fn sol_type_name() -> ::alloc::borrow::Cow<'static, str> {
                     <#sol_address as #sol_type>::sol_type_name()
                 }
 
@@ -195,7 +195,7 @@ pub fn sol_interface(input: TokenStream) -> TokenStream {
                     #sol_address::eip712_data_word(&rust.address)
                 }
 
-                fn encode_packed_to(rust: &Self::RustType, out: &mut alloc::vec::Vec<u8>) {
+                fn encode_packed_to(rust: &Self::RustType, out: &mut ::alloc::vec::Vec<u8>) {
                     #sol_address::encode_packed_to(&rust.address, out)
                 }
             }

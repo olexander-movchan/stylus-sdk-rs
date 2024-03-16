@@ -19,7 +19,7 @@ pub fn derive_solidity_error(input: TokenStream) -> TokenStream {
         };
         let ty = error.ty.clone();
         match_arms.extend(quote! {
-            #name::#variant_name(e) => ::stylus_sdk::call::MethodError::encode(e),
+            #name::#variant_name(e) => stylus_sdk::call::MethodError::encode(e),
         });
         output.extend(quote! {
             impl From<#ty> for #name {
@@ -31,8 +31,8 @@ pub fn derive_solidity_error(input: TokenStream) -> TokenStream {
         errors.push(error);
     }
     output.extend(quote! {
-        impl From<#name> for alloc::vec::Vec<u8> {
-            fn from(err: #name) -> alloc::vec::Vec<u8> {
+        impl From<#name> for ::alloc::vec::Vec<u8> {
+            fn from(err: #name) -> ::alloc::vec::Vec<u8> {
                 match err {
                     #match_arms
                 }
@@ -43,9 +43,9 @@ pub fn derive_solidity_error(input: TokenStream) -> TokenStream {
     if cfg!(feature = "export-abi") {
         output.extend(quote! {
             impl stylus_sdk::abi::export::internal::InnerTypes for #name {
-                fn inner_types() -> alloc::vec::Vec<stylus_sdk::abi::export::internal::InnerType> {
-                    use alloc::{format, vec};
-                    use core::any::TypeId;
+                fn inner_types() -> ::alloc::vec::Vec<stylus_sdk::abi::export::internal::InnerType> {
+                    use ::alloc::{format, vec};
+                    use ::core::any::TypeId;
                     use stylus_sdk::abi::export::internal::InnerType;
                     use stylus_sdk::alloy_sol_types::SolError;
 

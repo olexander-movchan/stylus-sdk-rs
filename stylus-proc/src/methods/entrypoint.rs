@@ -24,10 +24,10 @@ pub fn entrypoint(attr: TokenStream, input: TokenStream) -> TokenStream {
             output.extend(quote!{
                 unsafe impl #impl_generics stylus_sdk::storage::TopLevelStorage for #name #ty_generics #where_clause {}
 
-                fn entrypoint(input: alloc::vec::Vec<u8>) -> stylus_sdk::ArbResult {
+                fn entrypoint(input: ::alloc::vec::Vec<u8>) -> stylus_sdk::ArbResult {
                     use stylus_sdk::{abi::Router, alloy_primitives::U256, console, hex, storage::StorageType};
-                    use core::convert::TryInto;
-                    use alloc::vec;
+                    use ::core::convert::TryInto;
+                    use ::alloc::vec;
 
                     if input.len() < 4 {
                         console!("calldata too short: {}", hex::encode(input));
