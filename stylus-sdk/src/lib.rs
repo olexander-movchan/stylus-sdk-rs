@@ -54,8 +54,6 @@ pub mod storage;
 pub mod tx;
 pub mod types;
 
-mod util;
-
 #[cfg(feature = "hostio")]
 pub mod hostio;
 

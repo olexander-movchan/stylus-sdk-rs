@@ -113,8 +113,8 @@ impl<T: Erc20Params> Erc20<T> {
         T::SYMBOL.into()
     }
 
-    pub fn decimals() -> u8 {
-        T::DECIMALS
+    pub fn decimals() -> [u8; 1] {
+        [T::DECIMALS]
     }
 
     pub fn balance_of(&self, address: Address) -> U256 {

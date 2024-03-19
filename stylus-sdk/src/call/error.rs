@@ -38,7 +38,7 @@ impl MethodError for Error {
 impl<T: SolError> MethodError for T {
     #[inline]
     fn encode(self) -> Vec<u8> {
-        SolError::encode(&self)
+        SolError::abi_encode(&self)
     }
 }
 

@@ -7,22 +7,22 @@
 use crate::{abi::AbiType, console, msg, ArbResult};
 use alloc::{vec, vec::Vec};
 use alloy_primitives::U256;
-use alloy_sol_types::SolType;
+use alloy_sol_types::SolValue;
 use core::fmt;
 
 pub trait EncodableReturnType {
     fn encode(self) -> ArbResult;
 }
 
-impl<T: AbiType> EncodableReturnType for T {
+impl<T: AbiType + SolValue> EncodableReturnType for T {
     #[inline(always)]
     fn encode(self) -> ArbResult {
         // coerce types into a tuple of at least 1 element
-        Ok(<(T,) as AbiType>::SolType::encode(&(self,)))
+        Ok(self.abi_encode())
     }
 }
 
-impl<T: AbiType, E: Into<Vec<u8>>> EncodableReturnType for Result<T, E> {
+impl<T: AbiType + SolValue, E: Into<Vec<u8>>> EncodableReturnType for Result<T, E> {
     #[inline(always)]
     fn encode(self) -> ArbResult {
         match self {

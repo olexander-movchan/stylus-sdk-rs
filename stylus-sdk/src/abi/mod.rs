@@ -18,9 +18,9 @@ use crate::{storage::TopLevelStorage, ArbResult};
 use alloy_sol_types::SolType;
 use core::borrow::BorrowMut;
 
-pub use bytes::{Bytes, BytesSolType};
+// pub use bytes::{Bytes, BytesSolType};
 pub use const_string::ConstString;
-pub use fixed_bytes::FixedBytesSolType;
+// pub use fixed_bytes::FixedBytesSolType;
 
 #[cfg(feature = "export-abi")]
 pub use export::GenerateAbi;
@@ -28,7 +28,6 @@ pub use export::GenerateAbi;
 #[cfg(feature = "export-abi")]
 pub mod export;
 
-mod bytes;
 mod const_string;
 mod fixed_bytes;
 mod impls;

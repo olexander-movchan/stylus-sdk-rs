@@ -8,7 +8,7 @@ use proc_macro2::Ident;
 use quote::quote;
 use sha3::{Digest, Keccak256};
 use std::borrow::Cow;
-use syn_solidity::{FunctionAttribute, Item, Mutability, SolIdent, Visibility};
+use syn_solidity::{FunctionAttribute, Item, Mutability, SolIdent, Spanned, Visibility};
 
 pub fn sol_interface(input: TokenStream) -> TokenStream {
     let input = match syn_solidity::parse(input) {
@@ -20,6 +20,7 @@ pub fn sol_interface(input: TokenStream) -> TokenStream {
     let alloy_address = quote!(stylus_sdk::alloy_primitives::Address);
     let sol_address = quote!(stylus_sdk::alloy_sol_types::sol_data::Address);
     let sol_type = quote!(stylus_sdk::alloy_sol_types::SolType);
+    let sol_type_value = quote!(stylus_sdk::alloy_sol_types::private::SolTypeValue);
     let alloy = quote!(stylus_sdk::alloy_sol_types);
 
     let mut output = quote!();
@@ -34,7 +35,7 @@ pub fn sol_interface(input: TokenStream) -> TokenStream {
         }
 
         let name = &contract.name;
-        let sol_name = Ident::new(&format!("{name}SolType"), name.span());
+        // let sol_name = Ident::new(&format!("{name}SolType"), name.span());
 
         for item in contract.body {
             let Item::Function(func) = item else {
@@ -107,7 +108,7 @@ pub fn sol_interface(input: TokenStream) -> TokenStream {
             let mut sol_args = vec![];
             let mut rust_args = vec![];
             let mut rust_arg_names = vec![];
-            for (i, arg) in func.arguments.iter().enumerate() {
+            for (i, arg) in func.parameters.iter().enumerate() {
                 let (sol_path, abi) = solidity_type_info(&arg.ty);
                 if i > 0 {
                     selector.update(",");
@@ -142,11 +143,11 @@ pub fn sol_interface(input: TokenStream) -> TokenStream {
                     Result<<#return_type as #sol_type>::RustType, stylus_sdk::call::Error>
                 {
                     use alloc::vec;
-                    let args = <(#(#sol_args,)*) as #sol_type>::encode(&(#(#rust_arg_names,)*));
+                    let args = <(#(#sol_args,)*) as #sol_type>::abi_encode(&(#(#rust_arg_names,)*));
                     let mut calldata = vec![#selector0, #selector1, #selector2, #selector3];
                     calldata.extend(args);
                     let returned = #call(context, self.address, &calldata)?;
-                    Ok(<(#return_type,) as #sol_type>::decode(&returned, true)?.0)
+                    Ok(<(#return_type,) as #sol_type>::abi_decode(&returned, true)?.0)
                 }
             });
         }
@@ -172,42 +173,45 @@ pub fn sol_interface(input: TokenStream) -> TokenStream {
                 }
             }
 
-            pub struct #sol_name;
+            // pub struct #sol_name;
 
-            impl #sol_type for #sol_name {
+            impl #sol_type for #name {
                 type RustType = #name;
+                type Token<'a> = <#sol_address as #sol_type>::Token<'a>;
 
-                type TokenType<'a> = <#sol_address as #sol_type>::TokenType<'a>;
+                const SOL_NAME: &'static str = <#sol_address as #sol_type>::SOL_NAME;
+                const ENCODED_SIZE: Option<usize> = <#sol_address as #sol_type>::ENCODED_SIZE;
 
-                fn sol_type_name() -> alloc::borrow::Cow<'static, str> {
-                    <#sol_address as #sol_type>::sol_type_name()
+                fn valid_token(token: &Self::Token<'_>) -> bool {
+                    <#sol_address as #sol_type>::valid_token(token)
                 }
 
-                fn type_check(token: &Self::TokenType<'_>) -> #alloy::Result<()> {
-                    #sol_address::type_check(token)
-                }
-
-                fn detokenize(token: Self::TokenType<'_>) -> Self::RustType {
+                fn detokenize(token: Self::Token<'_>) -> Self::RustType {
                     #name::new(#sol_address::detokenize(token))
-                }
-
-                fn eip712_data_word(rust: &Self::RustType) -> #alloy::Word {
-                    #sol_address::eip712_data_word(&rust.address)
-                }
-
-                fn encode_packed_to(rust: &Self::RustType, out: &mut alloc::vec::Vec<u8>) {
-                    #sol_address::encode_packed_to(&rust.address, out)
                 }
             }
 
-            impl #alloy::Encodable<#sol_name> for #name {
-                fn to_tokens(&self) -> <#sol_name as #sol_type>::TokenType<'_> {
-                    <#alloy_address as #alloy::Encodable<#sol_address>>::to_tokens(&self.address)
+            impl #sol_type_value<#name> for #name {
+                #[inline]
+                fn stv_to_tokens(&self) -> <Self as #alloy::SolType>::Token<'_> {
+                    <#alloy_address as #sol_type_value<#sol_address>>::stv_to_tokens(&self.address)
+                }
+                #[inline]
+                fn stv_abi_encoded_size(&self) -> usize {
+                    <#alloy_address as #sol_type_value<#sol_address>>::stv_abi_encoded_size(&self.address)
+                }
+                #[inline]
+                fn stv_eip712_data_word(&self) -> #alloy::Word {
+                    <#alloy_address as #sol_type_value<#sol_address>>::stv_eip712_data_word(&self.address)
+                }
+                #[inline]
+                fn stv_abi_encode_packed_to(&self, out: &mut #alloy::private::Vec<u8>) {
+                    <#alloy_address as #sol_type_value<#sol_address>>::stv_abi_encode_packed_to(&self.address, out)
                 }
             }
 
             impl stylus_sdk::abi::AbiType for #name {
-                type SolType = #sol_name;
+                type SolType = Self;
 
                 const ABI: stylus_sdk::abi::ConstString = <#alloy_address as stylus_sdk::abi::AbiType>::ABI;
             }

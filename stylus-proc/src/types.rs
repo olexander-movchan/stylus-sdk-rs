@@ -5,7 +5,7 @@ use alloy_sol_types::SolType;
 use sha3::{Digest, Keccak256};
 use std::{borrow::Cow, fmt::Display, num::NonZeroU16, str::FromStr};
 use syn::Token;
-use syn_solidity::Type;
+use syn_solidity::{Expr, Lit, Type};
 
 /// The purity of a Solidity method
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, PartialOrd, Ord)]
@@ -73,7 +73,7 @@ pub fn solidity_type_info(ty: &Type) -> (Cow<'static, str>, Cow<'static, str>) {
     }
     macro_rules! simple {
         ($ty:ident) => {
-            (path!(stringify!($ty)), sol_data::$ty::sol_type_name())
+            (path!(stringify!($ty)), sol_data::$ty::SOL_NAME.into())
         };
     }
     match ty {
@@ -95,9 +95,12 @@ pub fn solidity_type_info(ty: &Type) -> (Cow<'static, str>, Cow<'static, str>) {
         }
         Type::Array(ty) => {
             let (path, abi) = solidity_type_info(&ty.ty);
-            match ty.size.as_ref().map(|x| x.base10_digits()) {
-                Some(size) => (path!("FixedArray<{path}, {size}>"), abi!("{abi}[{size}]")),
-                None => (path!("Array<{path}>"), abi!("{abi}[]")),
+            match ty.size.as_deref() {
+                Some(Expr::Lit(Lit::Number(size))) => {
+                    let size = size.base10_digits();
+                    (path!("FixedArray<{path}, {size}>"), abi!("{abi}[{size}]"))
+                }
+                _ => (path!("Array<{path}>"), abi!("{abi}[]")),
             }
         }
         Type::Tuple(tup) => {

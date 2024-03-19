@@ -3,6 +3,8 @@ extern crate alloc;
 
 use crate::erc20::{Erc20, Erc20Params};
 use alloc::{string::String, vec::Vec};
+use alloy_primitives::Address;
+use alloy_sol_types::sol;
 use stylus_sdk::{alloy_primitives::U256, call, msg, prelude::*};
 
 #[cfg(target_arch = "wasm32")]
@@ -36,6 +38,22 @@ sol_interface! {
     }
 }
 
+sol! {
+    struct MyStruct {
+        address a;
+        bool b;
+        int32 i;
+    }
+}
+
+impl AbiType for MyStruct {
+    type SolType = Self;
+
+    const ABI: ConstString = ConstString::new(stringify!(MyStruct));
+    const EXPORT_ABI_ARG: ConstString = append!(Self::ABI, " calldata");
+    const EXPORT_ABI_RET: ConstString = append!(Self::ABI, " memory");
+}
+
 #[external]
 #[inherit(Erc20<WethParams>)]
 impl Weth {
@@ -61,5 +79,13 @@ impl Weth {
         let (text, sum) = helper.sum(self, values)?;
         assert_eq!(&text, "sum");
         Ok(sum)
+    }
+
+    pub fn my_method() -> MyStruct {
+        MyStruct {
+            a: Address::default(),
+            b: true,
+            i: 42,
+        }
     }
 }
